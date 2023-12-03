@@ -12,48 +12,31 @@ let rec ensure_all pred l =
 let clean_empty_lines =
   List.filter (fun line -> match line with "" -> false | _ -> true)
 
-let take2 l =
-  match l with
-  | [] -> None
-  | first :: rest -> (
-      match rest with [] -> None | second :: _ -> Some (first, second))
-
-let take3 l =
-  match l with
-  | [] -> None
-  | first :: rest -> (
-      match rest with
-      | [] -> None
-      | second :: rest -> (
-          match rest with
-          | [] -> None
-          | third :: _ -> Some (first, second, third)))
-
 let parse_round round =
   let raw_blocks = String.split_on_char ',' round in
   List.map
     (fun block ->
-      match take3 (String.split_on_char ' ' block) with
-      | Some (_, count, color) -> (
+      match String.split_on_char ' ' block with
+      | _ :: count :: color :: _ -> (
           match color with
           | "red" -> Red (int_of_string count)
           | "green" -> Green (int_of_string count)
           | "blue" -> Blue (int_of_string count)
           | _ -> raise (Err (Printf.sprintf "invalid color '%s'" color)))
-      | None -> raise (Err "expected block but none was found"))
+      | _ -> raise (Err "expected block but none was found"))
     raw_blocks
 
 let parse_game game_raw =
-  match take2 (String.split_on_char ':' game_raw) with
-  | None -> raise (Err "invalid game input, no colon")
-  | Some (prefix, rounds) -> (
-      match take2 (String.split_on_char ' ' prefix) with
-      | Some (_, game_id) ->
+  match String.split_on_char ':' game_raw with
+  | prefix :: rounds :: _ -> (
+      match String.split_on_char ' ' prefix with
+      | _ :: game_id :: _ ->
           {
             id = int_of_string game_id;
             rounds = List.map parse_round (String.split_on_char ';' rounds);
           }
-      | None -> raise (Err "invalid game input, failed to parse game prefix"))
+      | _ -> raise (Err "invalid game input, failed to parse game prefix"))
+  | _ -> raise (Err "invalid game input, no colon")
 
 let validate_round bounds round =
   ensure_all
