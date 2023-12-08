@@ -11,4 +11,4 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11|}
 let () =
   Day4.part1 sample;
   Day4.part1 (Util.read_input 4);
-  Day4.part2 sample
+  Day4.part2 (Util.read_input 4)

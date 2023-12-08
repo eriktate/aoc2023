@@ -55,35 +55,16 @@ let rec expand_cards map cards =
   match cards with
   | [] -> map
   | hd :: rest ->
-      let matches = IntSet.cardinal (get_card_matches hd) in
+      let matches =
+        min (IntSet.cardinal (get_card_matches hd)) (List.length rest)
+      in
       let copies = some_or (IntMap.find_opt hd.id map) 1 in
-      Printf.printf "processing card %d which has %d matches and %d copies\n"
-        hd.id matches copies;
       let rec inc_subsequent_cards map i =
-        if hd.id + i < IntMap.cardinal map && i < copies then
-          inc_subsequent_cards (increment_map map (hd.id + i) matches) (i + 1)
+        if i <= matches then
+          inc_subsequent_cards (increment_map map (hd.id + i) copies) (i + 1)
         else map
       in
-      let map = inc_subsequent_cards map 1 in
-      expand_cards map rest
-
-(*
-let rec expand_cards map cards =
-  match cards with
-  | hd :: rest ->
-      let matches = IntSet.cardinal (get_card_matches hd) in
-      let multiplier =
-        match IntMap.find_opt hd.id map with Some v -> v | None -> 1
-      in
-      let map =
-        List.fold_left
-          (fun map lower_card ->
-            increment_map map lower_card.id (matches * multiplier))
-          map rest
-      in
-      expand_cards map rest
-  | [] -> map
-*)
+      expand_cards (inc_subsequent_cards map 1) rest
 
 let print_card card =
   Printf.printf "%d: {%s} %d\n" card.id
@@ -118,7 +99,12 @@ let part1 input =
 let part2 input =
   match parse_cards input with
   | Ok cards ->
-      let expanded = expand_cards IntMap.empty cards in
+      let map =
+        List.fold_left
+          (fun acc card -> IntMap.add card.id 1 acc)
+          IntMap.empty cards
+      in
+      let expanded = expand_cards map cards in
       let total_cards = IntMap.fold (fun _ v acc -> acc + v) expanded 0 in
       Printf.printf "Part2: %d\n" total_cards
   | Error err -> Printf.eprintf "failed to parse cards: %s\n" err
